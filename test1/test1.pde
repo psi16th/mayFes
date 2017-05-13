@@ -103,7 +103,7 @@ void draw()
       drawSkeleton(userList[i]);
   }    
  
-  if (frameCount % 200 == 0) {
+  if (frameCount % 600 == 0) {
     int[] users = Arrays.copyOf(userList, userList.length);
     shuffle(users);
     for (int i=0; i<6; i++) {
@@ -287,7 +287,7 @@ void initMovePoints() {
         v[u][i][j].x = 0;
         v[u][i][j].y = 0;
         v[u][i][j].z = 0;
-        err[u][i][j] = random(-10, 10);
+        err[u][i][j] = random(-10, 10) + random(-10, 10) + random(-10, 10) + random(-10, 10) + random(-10, 10);
         w[u][i][j] = random(0.5, 0.98);
         p[u][i][j] = random(20, 100);
         c[u][i][j] = 180;
