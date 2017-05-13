@@ -103,7 +103,7 @@ void draw()
       drawSkeleton(userList[i]);
   }    
  
-  if (frameCount % 10 == 0) {
+  if (frameCount % 200 == 0) {
     int[] users = Arrays.copyOf(userList, userList.length);
     shuffle(users);
     for (int i=0; i<6; i++) {
