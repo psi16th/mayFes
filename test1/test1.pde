@@ -31,12 +31,13 @@ color[]      userClr = new color[]{ color(255,0,0),
                                     color(0,255,255)
                                   };
 int jointNum = 15;
-int pointNum = 100;
+int pointNum = 300;
 PVector[][][] pos = new PVector[6][jointNum][pointNum];
 PVector[][][] v = new PVector[6][jointNum][pointNum];
-float[][][] c = new float[6][jointNum][pointNum];
+float[][][] err = new float[6][jointNum][pointNum];
 float[][][] w = new float[6][jointNum][pointNum];
 float[][][] p = new float[6][jointNum][pointNum];
+int[] limbOrder = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14};
 
 
 void setup()
@@ -66,6 +67,7 @@ void setup()
               10,150000);
 
   initMovePoints();
+  blendMode(ADD);
   background(0,0,0);
  }
 
@@ -74,10 +76,10 @@ void draw()
   // update the cam
   context.update();
 
-  // background(0,0,0);
+  background(0,0,0);
   // blendMode(DARKEST);
-  fill(255, 50);
-  rect(0, 0, width, height);
+  // fill(255, 50);
+  // rect(0, 0, width, height);
   // blendMode(ADD);
   
   // set the scene pos
@@ -124,8 +126,8 @@ void draw()
       drawSkeleton(userList[i]);
     
     // draw the center of mass
-    if(context.getCoM(userList[i],com))
-    {
+    // if(context.getCoM(userList[i],com))
+    // {
       // stroke(100,255,0);
       // strokeWeight(1);
       // beginShape(LINES);
@@ -141,7 +143,7 @@ void draw()
       
       // fill(0,255,100);
       // text(Integer.toString(userList[i]),com.x,com.y,com.z);
-    }      
+    // }      
   }    
  
   // draw the kinect cam
@@ -154,47 +156,47 @@ void drawSkeleton(int userId)
   strokeWeight(3);
 
   // to get the 3d joint data
-  // drawLimb(userId, SimpleOpenNI.SKEL_HEAD, SimpleOpenNI.SKEL_NECK);
+  drawLimb(userId, SimpleOpenNI.SKEL_HEAD, SimpleOpenNI.SKEL_NECK, limbOrder[0]);
 
-  // drawLimb(userId, SimpleOpenNI.SKEL_NECK, SimpleOpenNI.SKEL_LEFT_SHOULDER);
-  // drawLimb(userId, SimpleOpenNI.SKEL_LEFT_SHOULDER, SimpleOpenNI.SKEL_LEFT_ELBOW);
-  // drawLimb(userId, SimpleOpenNI.SKEL_LEFT_ELBOW, SimpleOpenNI.SKEL_LEFT_HAND);
+  drawLimb(userId, SimpleOpenNI.SKEL_NECK, SimpleOpenNI.SKEL_LEFT_SHOULDER, limbOrder[1]);
+  drawLimb(userId, SimpleOpenNI.SKEL_LEFT_SHOULDER, SimpleOpenNI.SKEL_LEFT_ELBOW, limbOrder[2]);
+  drawLimb(userId, SimpleOpenNI.SKEL_LEFT_ELBOW, SimpleOpenNI.SKEL_LEFT_HAND, limbOrder[3]);
 
-  // drawLimb(userId, SimpleOpenNI.SKEL_NECK, SimpleOpenNI.SKEL_RIGHT_SHOULDER);
-  // drawLimb(userId, SimpleOpenNI.SKEL_RIGHT_SHOULDER, SimpleOpenNI.SKEL_RIGHT_ELBOW);
-  // drawLimb(userId, SimpleOpenNI.SKEL_RIGHT_ELBOW, SimpleOpenNI.SKEL_RIGHT_HAND);
+  drawLimb(userId, SimpleOpenNI.SKEL_NECK, SimpleOpenNI.SKEL_RIGHT_SHOULDER, limbOrder[4]);
+  drawLimb(userId, SimpleOpenNI.SKEL_RIGHT_SHOULDER, SimpleOpenNI.SKEL_RIGHT_ELBOW, limbOrder[5]);
+  drawLimb(userId, SimpleOpenNI.SKEL_RIGHT_ELBOW, SimpleOpenNI.SKEL_RIGHT_HAND, limbOrder[6]);
 
-  // drawLimb(userId, SimpleOpenNI.SKEL_LEFT_SHOULDER, SimpleOpenNI.SKEL_TORSO);
-  // drawLimb(userId, SimpleOpenNI.SKEL_RIGHT_SHOULDER, SimpleOpenNI.SKEL_TORSO);
+  drawLimb(userId, SimpleOpenNI.SKEL_LEFT_SHOULDER, SimpleOpenNI.SKEL_TORSO, limbOrder[7]);
+  drawLimb(userId, SimpleOpenNI.SKEL_RIGHT_SHOULDER, SimpleOpenNI.SKEL_TORSO, limbOrder[8]);
 
-  // drawLimb(userId, SimpleOpenNI.SKEL_TORSO, SimpleOpenNI.SKEL_LEFT_HIP);
-  // drawLimb(userId, SimpleOpenNI.SKEL_LEFT_HIP, SimpleOpenNI.SKEL_LEFT_KNEE);
-  // drawLimb(userId, SimpleOpenNI.SKEL_LEFT_KNEE, SimpleOpenNI.SKEL_LEFT_FOOT);
+  drawLimb(userId, SimpleOpenNI.SKEL_TORSO, SimpleOpenNI.SKEL_LEFT_HIP, limbOrder[9]);
+  drawLimb(userId, SimpleOpenNI.SKEL_LEFT_HIP, SimpleOpenNI.SKEL_LEFT_KNEE, limbOrder[10]);
+  drawLimb(userId, SimpleOpenNI.SKEL_LEFT_KNEE, SimpleOpenNI.SKEL_LEFT_FOOT, limbOrder[11]);
 
-  // drawLimb(userId, SimpleOpenNI.SKEL_TORSO, SimpleOpenNI.SKEL_RIGHT_HIP);
-  // drawLimb(userId, SimpleOpenNI.SKEL_RIGHT_HIP, SimpleOpenNI.SKEL_RIGHT_KNEE);
-  // drawLimb(userId, SimpleOpenNI.SKEL_RIGHT_KNEE, SimpleOpenNI.SKEL_RIGHT_FOOT); 
+  drawLimb(userId, SimpleOpenNI.SKEL_TORSO, SimpleOpenNI.SKEL_RIGHT_HIP, limbOrder[12]);
+  drawLimb(userId, SimpleOpenNI.SKEL_RIGHT_HIP, SimpleOpenNI.SKEL_RIGHT_KNEE, limbOrder[13]);
+  drawLimb(userId, SimpleOpenNI.SKEL_RIGHT_KNEE, SimpleOpenNI.SKEL_RIGHT_FOOT, limbOrder[14]); 
 
-  drawPoints(userId, SimpleOpenNI.SKEL_HEAD);
-  drawPoints(userId, SimpleOpenNI.SKEL_NECK);
+  // drawPoints(userId, SimpleOpenNI.SKEL_HEAD);
+  // drawPoints(userId, SimpleOpenNI.SKEL_NECK);
 
-  drawPoints(userId, SimpleOpenNI.SKEL_LEFT_SHOULDER);
-  drawPoints(userId, SimpleOpenNI.SKEL_LEFT_ELBOW);
-  drawPoints(userId, SimpleOpenNI.SKEL_LEFT_HAND);
+  // drawPoints(userId, SimpleOpenNI.SKEL_LEFT_SHOULDER);
+  // drawPoints(userId, SimpleOpenNI.SKEL_LEFT_ELBOW);
+  // drawPoints(userId, SimpleOpenNI.SKEL_LEFT_HAND);
 
-  drawPoints(userId, SimpleOpenNI.SKEL_RIGHT_SHOULDER);
-  drawPoints(userId, SimpleOpenNI.SKEL_RIGHT_ELBOW);
-  drawPoints(userId, SimpleOpenNI.SKEL_RIGHT_HAND);
+  // drawPoints(userId, SimpleOpenNI.SKEL_RIGHT_SHOULDER);
+  // drawPoints(userId, SimpleOpenNI.SKEL_RIGHT_ELBOW);
+  // drawPoints(userId, SimpleOpenNI.SKEL_RIGHT_HAND);
 
-  drawPoints(userId, SimpleOpenNI.SKEL_TORSO);
+  // drawPoints(userId, SimpleOpenNI.SKEL_TORSO);
 
-  drawPoints(userId, SimpleOpenNI.SKEL_LEFT_HIP);
-  drawPoints(userId, SimpleOpenNI.SKEL_LEFT_KNEE);
-  drawPoints(userId, SimpleOpenNI.SKEL_LEFT_FOOT);
+  // drawPoints(userId, SimpleOpenNI.SKEL_LEFT_HIP);
+  // drawPoints(userId, SimpleOpenNI.SKEL_LEFT_KNEE);
+  // drawPoints(userId, SimpleOpenNI.SKEL_LEFT_FOOT);
 
-  drawPoints(userId, SimpleOpenNI.SKEL_RIGHT_HIP);
-  drawPoints(userId, SimpleOpenNI.SKEL_RIGHT_KNEE); 
-  drawPoints(userId, SimpleOpenNI.SKEL_RIGHT_FOOT); 
+  // drawPoints(userId, SimpleOpenNI.SKEL_RIGHT_HIP);
+  // drawPoints(userId, SimpleOpenNI.SKEL_RIGHT_KNEE); 
+  // drawPoints(userId, SimpleOpenNI.SKEL_RIGHT_FOOT); 
 
   // draw body direction
   getBodyDirection(userId,bodyCenter,bodyDir);
@@ -210,71 +212,23 @@ void drawSkeleton(int userId)
  
 }
 
-void drawLimb(int userId,int jointType1,int jointType2)
+void drawLimb(int userId,int jointType1,int jointType2, int limb)
 {
   PVector jointPos1 = new PVector();
   PVector jointPos2 = new PVector();
   float  confidence;
+
+  PVector[] pos_ = pos[userId][limb];
+  PVector[] v_ = v[userId][limb];
+  float[] err_ = err[userId][limb];
+  float[] w_ = w[userId][limb];
+  float[] p_ = p[userId][limb];
   
   // draw the joint position
   confidence = context.getJointPositionSkeleton(userId,jointType1,jointPos1);
   confidence = context.getJointPositionSkeleton(userId,jointType2,jointPos2);
 
-  stroke(255,0,0,confidence * 200 + 55);
-  strokeWeight(3);
-  point(jointPos1.x,jointPos1.y,jointPos1.z);
-  point(jointPos2.x,jointPos2.y,jointPos2.z);
-  // line(jointPos1.x,jointPos1.y,jointPos1.z,
-  //      jointPos2.x,jointPos2.y,jointPos2.z);
-
-
-  
-  drawJointOrientation(userId,jointType1,jointPos1,50);
-}
-
-void drawJointOrientation(int userId,int jointType,PVector pos,float length)
-{
-  // draw the joint orientation  
-  PMatrix3D  orientation = new PMatrix3D();
-  float confidence = context.getJointOrientationSkeleton(userId,jointType,orientation);
-  if(confidence < 0.001f) 
-    // nothing to draw, orientation data is useless
-    return;
-    
-  // pushMatrix();
-  //   translate(pos.x,pos.y,pos.z);
-    
-  //   // set the local coordsys
-  //   applyMatrix(orientation);
-    
-  //   // coordsys lines are 100mm long
-  //   // x - r
-  //   stroke(255,0,0,confidence * 200 + 55);
-  //   line(0,0,0,
-  //        length,0,0);
-  //   // y - g
-  //   stroke(0,255,0,confidence * 200 + 55);
-  //   line(0,0,0,
-  //        0,length,0);
-  //   // z - b    
-  //   stroke(0,0,255,confidence * 200 + 55);
-  //   line(0,0,0,
-  //        0,0,length);
-  // popMatrix();
-}
-
-void drawPoints(int userId,int jointPoint) {
-  PVector jointPos = new PVector();
-  float  confidence;
-  PVector[] pos_ = pos[userId][jointPoint];
-  PVector[] v_ = v[userId][jointPoint];
-  float[] c_ = c[userId][jointPoint];
-  float[] w_ = w[userId][jointPoint];
-  float[] p_ = p[userId][jointPoint];
-
-  confidence = context.getJointPositionSkeleton(userId,jointPoint,jointPos);
-
-  stroke(50,50,255,confidence * 200 + 55);
+  stroke(20,20,255);
   strokeWeight(3);
 
   for (int i=0; i<pointNum; i++) {
@@ -282,9 +236,40 @@ void drawPoints(int userId,int jointPoint) {
   }
 
   for (int i=0; i<pointNum; i++) {
-    pos_[i].x = pos_[i].x + v_[i].x + random(20);
-    pos_[i].y = pos_[i].y + v_[i].y + random(20);
-    pos_[i].z = pos_[i].z + v_[i].z + random(20);
+    pos_[i].x = pos_[i].x + v_[i].x;
+    pos_[i].y = pos_[i].y + v_[i].y;
+    pos_[i].z = pos_[i].z + v_[i].z;
+  }
+
+  for (int i=0; i<pointNum; i++) {
+    v_[i].x = w_[i] * v_[i].x + ((jointPos1.x + (jointPos2.x - jointPos1.x)/pointNum*i) - pos_[i].x)/p_[i] + err_[i];
+    v_[i].y = w_[i] * v_[i].y + ((jointPos1.y + (jointPos2.y - jointPos1.y)/pointNum*i) - pos_[i].y)/p_[i] + err_[i];
+    v_[i].z = w_[i] * v_[i].z + ((jointPos1.z + (jointPos2.z - jointPos1.z)/pointNum*i) - pos_[i].z)/p_[i] + err_[i];
+  }
+}
+
+void drawPoints(int userId,int jointPoint) {
+  PVector jointPos = new PVector();
+  float  confidence;
+  PVector[] pos_ = pos[userId][jointPoint];
+  PVector[] v_ = v[userId][jointPoint];
+  float[] err_ = err[userId][jointPoint];
+  float[] w_ = w[userId][jointPoint];
+  float[] p_ = p[userId][jointPoint];
+
+  confidence = context.getJointPositionSkeleton(userId,jointPoint,jointPos);
+
+  stroke(50,50,255,confidence * 200 + 55);
+  strokeWeight(10);
+
+  for (int i=0; i<pointNum; i++) {
+    point(pos_[i].x, pos_[i].y, pos_[i].z);
+  }
+
+  for (int i=0; i<pointNum; i++) {
+    pos_[i].x = pos_[i].x + v_[i].x;
+    pos_[i].y = pos_[i].y + v_[i].y;
+    pos_[i].z = pos_[i].z + v_[i].z;
   }
 
   for (int i=0; i<pointNum; i++) {
@@ -331,27 +316,27 @@ void keyPressed()
   switch(keyCode)
   {
     case LEFT:
-      rotY += 0.1f;
+      rotY += 0.01f;
       break;
     case RIGHT:
       // zoom out
-      rotY -= 0.1f;
+      rotY -= 0.01f;
       break;
     case UP:
       if(keyEvent.isShiftDown())
-        zoomF += 0.01f;
+        zoomF += 0.001f;
       else
-        rotX += 0.1f;
+        rotX += 0.01f;
       break;
     case DOWN:
       if(keyEvent.isShiftDown())
       {
-        zoomF -= 0.01f;
-        if(zoomF < 0.01)
-          zoomF = 0.01;
+        zoomF -= 0.001f;
+        if(zoomF < 0.001)
+          zoomF = 0.001;
       }
       else
-        rotX -= 0.1f;
+        rotX -= 0.01f;
       break;
   }
 }
@@ -396,9 +381,9 @@ void initMovePoints() {
       v[u][i][j].x = 0;
       v[u][i][j].y = 0;
       v[u][i][j].z = 0;
-      c[u][i][j] = random(100, 255);
+      err[u][i][j] = random(-0.1, 0.1);
       w[u][i][j] = random(0.95, 0.99);
-      p[u][i][j] = random(100, 200);
+      p[u][i][j] = 100+(1/random(0.00000001, 20));
     }
   }
 }
