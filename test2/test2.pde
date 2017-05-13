@@ -99,12 +99,6 @@ void draw()
   {
     if(context.isTrackingSkeleton(userList[i]))
       drawSkeleton(userList[i]);
-  }    
- 
-  if (frameCount % 300 == 0) {
-    for (int i=0; i<6; i++) {
-      // shuffle(limbOrder[i]);
-    }
   }
 }
 
@@ -287,17 +281,4 @@ void initMovePoints() {
     }
     limbOrder[u] = Arrays.copyOf(order, order.length);
   }
-}
-
-void shuffle(int[] array) {
-  for (int i = 0; i < array.length; i++) {
-    int dst = floor(random(1) * (i + 1));
-    swap(array, i, dst);
-  }
-}
-
-void swap(int[] array, int i, int j) {
-  int tmp = array[i];
-  array[i] = array[j];
-  array[j] = tmp;
 }
