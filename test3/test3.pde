@@ -13,7 +13,7 @@ import SimpleOpenNI.*;
 import java.util.Arrays;
 
 SimpleOpenNI context;
-float        zoomF =0.5f;
+float        zoomF = 0.3f;
 float        rotX = radians(180);  // by default rotate the hole scene 180deg around the x-axis, 
                                    // the data from openni comes upside down
 float        rotY = radians(0);
@@ -31,7 +31,10 @@ color[]      userClr = new color[]{ color(255,0,0),
                                     color(0,255,255)
                                   };
 int jointNum = 15;
-int pointNum = 800;
+int pointNum = 400;
+
+ArrayList[][] trackParticles = new ArrayList[6][jointNum];
+
 PVector[][][] pos = new PVector[6][jointNum][pointNum];
 PVector[][][] v = new PVector[6][jointNum][pointNum];
 float[][][] err = new float[6][jointNum][pointNum];
@@ -39,6 +42,7 @@ float[][][] w = new float[6][jointNum][pointNum];
 float[][][] p = new float[6][jointNum][pointNum];
 float[][][] c = new float[6][jointNum][pointNum];
 int[][] limbOrder = new int[6][jointNum];
+int[][] userColor = new int[6][jointNum];
 
 
 void setup()
@@ -69,6 +73,12 @@ void setup()
 
   initMovePoints();
   background(0,0,0);
+  println("SimpleOpenNI.SKEL_HEAD: "+SimpleOpenNI.SKEL_HEAD);
+  println("SimpleOpenNI.SKEL_LEFT_HAND: "+SimpleOpenNI.SKEL_LEFT_HAND);
+  println("SimpleOpenNI.SKEL_RIGHT_HAND: "+SimpleOpenNI.SKEL_RIGHT_HAND);
+  println("SimpleOpenNI.SKEL_LEFT_FOOT: "+SimpleOpenNI.SKEL_LEFT_FOOT);
+  println("SimpleOpenNI.SKEL_RIGHT_FOOT: "+SimpleOpenNI.SKEL_RIGHT_FOOT);
+  colorMode(ADD);
  }
 
 void draw()
@@ -93,87 +103,106 @@ void draw()
  
   translate(0,0,-1000);  // set the rotation center of the scene 1000 infront of the camera
   
+  beginShape(POINTS);
+  for(int y=0;y < context.depthHeight();y+=steps)
+  {
+    for(int x=0;x < context.depthWidth();x+=steps)
+    {
+      index = x + y * context.depthWidth();
+      if(depthMap[index] > 0)
+      { 
+        // draw the projected point
+        realWorldPoint = context.depthMapRealWorld()[index];
+        if(userMap[index] == 0){
+        } else{
+          stroke(150);
+          vertex(realWorldPoint.x,realWorldPoint.y,realWorldPoint.z);        
+        }
+      }
+    } 
+  } 
+  endShape();
+  
   // draw the skeleton if it's available
   int[] userList = context.getUsers();
   for(int i=0;i<userList.length;i++)
   {
     if(context.isTrackingSkeleton(userList[i]))
+      if (frameCount % 1 == 0) {
+        trackSkeleton(userList[i]);
+      }
       drawSkeleton(userList[i]);
-  }    
- 
-  if (frameCount % 300 == 0) {
-    for (int i=0; i<6; i++) {
-      // shuffle(limbOrder[i]);
-    }
   }
+  rotY += 0.005f;
+//  rotX += 0.005f;
 }
 
 // draw the skeleton with the selected joints
-void drawSkeleton(int userId)
+void trackSkeleton(int userId)
 {
   // to get the 3d joint data
-  drawLimb(userId, SimpleOpenNI.SKEL_HEAD, SimpleOpenNI.SKEL_NECK, limbOrder[userId][0]);
+  track(userId, SimpleOpenNI.SKEL_HEAD);
+  track(userId, SimpleOpenNI.SKEL_NECK);
 
-  drawLimb(userId, SimpleOpenNI.SKEL_NECK, SimpleOpenNI.SKEL_LEFT_SHOULDER, limbOrder[userId][1]);
-  drawLimb(userId, SimpleOpenNI.SKEL_LEFT_SHOULDER, SimpleOpenNI.SKEL_LEFT_ELBOW, limbOrder[userId][2]);
-  drawLimb(userId, SimpleOpenNI.SKEL_LEFT_ELBOW, SimpleOpenNI.SKEL_LEFT_HAND, limbOrder[userId][3]);
+  track(userId, SimpleOpenNI.SKEL_LEFT_SHOULDER);
+  track(userId, SimpleOpenNI.SKEL_LEFT_ELBOW);
+  track(userId, SimpleOpenNI.SKEL_LEFT_HAND);
 
-  drawLimb(userId, SimpleOpenNI.SKEL_NECK, SimpleOpenNI.SKEL_RIGHT_SHOULDER, limbOrder[userId][4]);
-  drawLimb(userId, SimpleOpenNI.SKEL_RIGHT_SHOULDER, SimpleOpenNI.SKEL_RIGHT_ELBOW, limbOrder[userId][5]);
-  drawLimb(userId, SimpleOpenNI.SKEL_RIGHT_ELBOW, SimpleOpenNI.SKEL_RIGHT_HAND, limbOrder[userId][6]);
+  track(userId, SimpleOpenNI.SKEL_RIGHT_SHOULDER);
+  track(userId, SimpleOpenNI.SKEL_RIGHT_ELBOW);
+  track(userId, SimpleOpenNI.SKEL_RIGHT_HAND);
 
-  drawLimb(userId, SimpleOpenNI.SKEL_LEFT_SHOULDER, SimpleOpenNI.SKEL_TORSO, limbOrder[userId][7]);
-  drawLimb(userId, SimpleOpenNI.SKEL_RIGHT_SHOULDER, SimpleOpenNI.SKEL_TORSO, limbOrder[userId][8]);
+  track(userId, SimpleOpenNI.SKEL_TORSO);
 
-  drawLimb(userId, SimpleOpenNI.SKEL_TORSO, SimpleOpenNI.SKEL_LEFT_HIP, limbOrder[userId][9]);
-  drawLimb(userId, SimpleOpenNI.SKEL_LEFT_HIP, SimpleOpenNI.SKEL_LEFT_KNEE, limbOrder[userId][10]);
-  drawLimb(userId, SimpleOpenNI.SKEL_LEFT_KNEE, SimpleOpenNI.SKEL_LEFT_FOOT, limbOrder[userId][11]);
+  track(userId, SimpleOpenNI.SKEL_LEFT_HIP);
+  track(userId, SimpleOpenNI.SKEL_LEFT_KNEE);
+  track(userId, SimpleOpenNI.SKEL_LEFT_FOOT);
 
-  drawLimb(userId, SimpleOpenNI.SKEL_TORSO, SimpleOpenNI.SKEL_RIGHT_HIP, limbOrder[userId][12]);
-  drawLimb(userId, SimpleOpenNI.SKEL_RIGHT_HIP, SimpleOpenNI.SKEL_RIGHT_KNEE, limbOrder[userId][13]);
-  drawLimb(userId, SimpleOpenNI.SKEL_RIGHT_KNEE, SimpleOpenNI.SKEL_RIGHT_FOOT, limbOrder[userId][14]); 
+  track(userId, SimpleOpenNI.SKEL_RIGHT_HIP);
+  track(userId, SimpleOpenNI.SKEL_RIGHT_KNEE);
+  track(userId, SimpleOpenNI.SKEL_RIGHT_FOOT);
 }
 
-void drawLimb(int userId,int jointType1,int jointType2, int limb)
-{
-  PVector jointPos1 = new PVector();
-  PVector jointPos2 = new PVector();
-  float  confidence;
-
-  PVector[] pos_ = pos[userId][limb];
-  PVector[] v_ = v[userId][limb];
-  float[] err_ = err[userId][limb];
-  float[] w_ = w[userId][limb];
-  float[] p_ = p[userId][limb];
-  float[] c_ = c[userId][limb];
-  
-  // draw the joint position
-  confidence = context.getJointPositionSkeleton(userId,jointType1,jointPos1);
-  confidence = context.getJointPositionSkeleton(userId,jointType2,jointPos2);
-
+void drawSkeleton(int userId) {
+  ArrayList<PVector>[] tracker = trackParticles[userId];
+  noFill();
   colorMode(HSB);
-  strokeWeight(1);
-
-  for (int i=0; i<pointNum; i++) {
-    stroke(255 - c_[i],255,255,c_[i]);
-    point(pos_[i].x, pos_[i].y, pos_[i].z);
-    if (i%5 == 3){
-      line(pos_[i].x, pos_[i].y, pos_[i].z,pos_[i-1].x, pos_[i-1].y, pos_[i-1].z);
+  for (int i=0; i<jointNum; i++) {
+    if (i == 6 || i == 7) {
+      beginShape(TRIANGLES);
+      for (int j=0; j<tracker[i].size()-3; j++) {
+        stroke(userColor[userId-1][i],255,255,j);
+        // fill(userColor[i],255,255,1.0*j/pointNum*80);
+        vertex(tracker[i].get(j).x, tracker[i].get(j).y, tracker[i].get(j).z);
+        vertex(tracker[i].get(j+3).x, tracker[i].get(j+3).y, tracker[i].get(j+3).z);
+      }
+      endShape();
     }
   }
+}
 
-  for (int i=0; i<pointNum; i++) {
-    pos_[i].x = pos_[i].x + v_[i].x;
-    pos_[i].y = pos_[i].y + v_[i].y;
-    pos_[i].z = pos_[i].z + v_[i].z;
-  }
+void track(int userId,int jointType) {
+  PVector jointPos = new PVector();
+  float  confidence;
+  ArrayList<PVector> tracker = trackParticles[userId][jointType];
 
-  for (int i=0; i<pointNum; i++) {
-    v_[i].x = w_[i] * v_[i].x + ((jointPos1.x + (jointPos2.x - jointPos1.x)/pointNum*i + err_[i]) - pos_[i].x)/p_[i];
-    v_[i].y = w_[i] * v_[i].y + ((jointPos1.y + (jointPos2.y - jointPos1.y)/pointNum*i + err_[i]) - pos_[i].y)/p_[i];
-    v_[i].z = w_[i] * v_[i].z + ((jointPos1.z + (jointPos2.z - jointPos1.z)/pointNum*i + err_[i]) - pos_[i].z)/p_[i];
-    c_[i] = map(v_[i].mag(), 0, 30, 0, 255);
+  // draw the joint position
+  confidence = context.getJointPositionSkeleton(userId,jointType,jointPos);
+
+  if (tracker.size() > pointNum) {
+    tracker.remove(0);
+    tracker.remove(1);
+    tracker.remove(2);
   }
+  PVector trackPos1 = new PVector(-1*random(-40,40), random(-40,40), random(-40,40));
+  PVector trackPos2 = new PVector(random(-40,40), -1*random(-40,40), random(-40,40));
+  PVector trackPos3 = new PVector(random(-40,40), random(-40,40), -1*random(-40,40));
+  trackPos1.add(jointPos);
+  trackPos2.add(jointPos);
+  trackPos3.add(jointPos);
+  tracker.add(trackPos1);
+  tracker.add(trackPos2);
+  tracker.add(trackPos3);
 }
 
 // -----------------------------------------------------------------
@@ -238,39 +267,14 @@ void keyPressed()
   }
 }
 
-void getBodyDirection(int userId,PVector centerPoint,PVector dir)
-{
-  PVector jointL = new PVector();
-  PVector jointH = new PVector();
-  PVector jointR = new PVector();
-  float  confidence;
-  
-  // draw the joint position
-  confidence = context.getJointPositionSkeleton(userId,SimpleOpenNI.SKEL_LEFT_SHOULDER,jointL);
-  confidence = context.getJointPositionSkeleton(userId,SimpleOpenNI.SKEL_HEAD,jointH);
-  confidence = context.getJointPositionSkeleton(userId,SimpleOpenNI.SKEL_RIGHT_SHOULDER,jointR);
-  
-  // take the neck as the center point
-  confidence = context.getJointPositionSkeleton(userId,SimpleOpenNI.SKEL_NECK,centerPoint);
-  
-  /*  // manually calc the centerPoint
-  PVector shoulderDist = PVector.sub(jointL,jointR);
-  centerPoint.set(PVector.mult(shoulderDist,.5));
-  centerPoint.add(jointR);
-  */
-  
-  PVector up = PVector.sub(jointH,centerPoint);
-  PVector left = PVector.sub(jointR,centerPoint);
-    
-  dir.set(up.cross(left));
-  dir.normalize();
-}
-
 void initMovePoints() {
   int[] order = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14};
   for (int u=0; u<6; u++) {
     for (int i=0; i<jointNum; i++) {
       for (int j=0; j<pointNum; j++) {
+        trackParticles[u][i] = new ArrayList<PVector>();
+        userColor[u][i] = int(random(255));
+        
         pos[u][i][j] = new PVector();
         v[u][i][j] = new PVector();
         pos[u][i][j].x = random(-width/2, width/2);
