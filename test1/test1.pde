@@ -31,7 +31,7 @@ color[]      userClr = new color[]{ color(255,0,0),
                                     color(0,255,255)
                                   };
 int jointNum = 15;
-int pointNum = 300;
+int pointNum = 800;
 PVector[][][] pos = new PVector[6][jointNum][pointNum];
 PVector[][][] v = new PVector[6][jointNum][pointNum];
 float[][][] err = new float[6][jointNum][pointNum];
@@ -67,7 +67,7 @@ void setup()
               10,150000);
 
   initMovePoints();
-  blendMode(ADD);
+//  blendMode(ADD);
   background(0,0,0);
  }
 
@@ -147,14 +147,15 @@ void draw()
   }    
  
   // draw the kinect cam
-  context.drawCamFrustum();
+  // context.drawCamFrustum();
+  if (frameCount % 300 == 0) {
+    shuffle(limbOrder);
+  }
 }
 
 // draw the skeleton with the selected joints
 void drawSkeleton(int userId)
 {
-  strokeWeight(3);
-
   // to get the 3d joint data
   drawLimb(userId, SimpleOpenNI.SKEL_HEAD, SimpleOpenNI.SKEL_NECK, limbOrder[0]);
 
@@ -229,7 +230,7 @@ void drawLimb(int userId,int jointType1,int jointType2, int limb)
   confidence = context.getJointPositionSkeleton(userId,jointType2,jointPos2);
 
   stroke(20,20,255);
-  strokeWeight(3);
+  strokeWeight(1);
 
   for (int i=0; i<pointNum; i++) {
     point(pos_[i].x, pos_[i].y, pos_[i].z);
@@ -242,9 +243,9 @@ void drawLimb(int userId,int jointType1,int jointType2, int limb)
   }
 
   for (int i=0; i<pointNum; i++) {
-    v_[i].x = w_[i] * v_[i].x + ((jointPos1.x + (jointPos2.x - jointPos1.x)/pointNum*i) - pos_[i].x)/p_[i] + err_[i];
-    v_[i].y = w_[i] * v_[i].y + ((jointPos1.y + (jointPos2.y - jointPos1.y)/pointNum*i) - pos_[i].y)/p_[i] + err_[i];
-    v_[i].z = w_[i] * v_[i].z + ((jointPos1.z + (jointPos2.z - jointPos1.z)/pointNum*i) - pos_[i].z)/p_[i] + err_[i];
+    v_[i].x = w_[i] * v_[i].x + ((jointPos1.x + (jointPos2.x - jointPos1.x)/pointNum*i + err_[i]) - pos_[i].x)/p_[i];
+    v_[i].y = w_[i] * v_[i].y + ((jointPos1.y + (jointPos2.y - jointPos1.y)/pointNum*i + err_[i]) - pos_[i].y)/p_[i];
+    v_[i].z = w_[i] * v_[i].z + ((jointPos1.z + (jointPos2.z - jointPos1.z)/pointNum*i + err_[i]) - pos_[i].z)/p_[i];
   }
 }
 
@@ -371,20 +372,33 @@ void getBodyDirection(int userId,PVector centerPoint,PVector dir)
 
 void initMovePoints() {
   for (int u=0; u<6; u++) {
-  for (int i=0; i<jointNum; i++) {
-    for (int j=0; j<pointNum; j++) {
-      pos[u][i][j] = new PVector();
-      v[u][i][j] = new PVector();
-      pos[u][i][j].x = random(0, width);
-      pos[u][i][j].y = random(0, height);
-      pos[u][i][j].z = random(0, 1000);
-      v[u][i][j].x = 0;
-      v[u][i][j].y = 0;
-      v[u][i][j].z = 0;
-      err[u][i][j] = random(-0.1, 0.1);
-      w[u][i][j] = random(0.95, 0.99);
-      p[u][i][j] = 100+(1/random(0.00000001, 20));
+    for (int i=0; i<jointNum; i++) {
+      for (int j=0; j<pointNum; j++) {
+        pos[u][i][j] = new PVector();
+        v[u][i][j] = new PVector();
+        pos[u][i][j].x = random(0, width);
+        pos[u][i][j].y = random(0, height);
+        pos[u][i][j].z = random(0, 1000);
+        v[u][i][j].x = 0;
+        v[u][i][j].y = 0;
+        v[u][i][j].z = 0;
+        err[u][i][j] = random(-10, 10);
+        w[u][i][j] = random(0.5, 0.98);
+        p[u][i][j] = random(20, 100);
+      }
     }
   }
 }
+
+void shuffle(int[] array) {
+  for (int i = 0; i < array.length; i++) {
+    int dst = floor(random(1) * (i + 1));
+    swap(array, i, dst);
+  }
+}
+
+void swap(int[] array, int i, int j) {
+  int tmp = array[i];
+  array[i] = array[j];
+  array[j] = tmp;
 }
