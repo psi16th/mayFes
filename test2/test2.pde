@@ -38,8 +38,6 @@ float[][][] err = new float[6][jointNum][pointNum];
 float[][][] w = new float[6][jointNum][pointNum];
 float[][][] p = new float[6][jointNum][pointNum];
 float[][][] c = new float[6][jointNum][pointNum];
-
-int[] userLimbOrder = {1,2,3,4,5,6};
 int[][] limbOrder = new int[6][jointNum];
 
 
@@ -103,19 +101,10 @@ void draw()
       drawSkeleton(userList[i]);
   }    
  
-  if (frameCount % 10 == 0) {
-    int[] users = Arrays.copyOf(userList, userList.length);
-    shuffle(users);
+  if (frameCount % 300 == 0) {
     for (int i=0; i<6; i++) {
-      print(userLimbOrder[i]);
-      shuffle(limbOrder[i]);
-      if (i<users.length) {
-        userLimbOrder[i] = users[i];
-      } else {
-        userLimbOrder[i] = i+1;
-      }
+      // shuffle(limbOrder[i]);
     }
-    println();
   }
 }
 
@@ -151,12 +140,12 @@ void drawLimb(int userId,int jointType1,int jointType2, int limb)
   PVector jointPos2 = new PVector();
   float  confidence;
 
-  PVector[] pos_ = pos[userLimbOrder[userId-1]][limb];
-  PVector[] v_ = v[userLimbOrder[userId-1]][limb];
-  float[] err_ = err[userLimbOrder[userId-1]][limb];
-  float[] w_ = w[userLimbOrder[userId-1]][limb];
-  float[] p_ = p[userLimbOrder[userId-1]][limb];
-  float[] c_ = c[userLimbOrder[userId-1]][limb];
+  PVector[] pos_ = pos[userId][limb];
+  PVector[] v_ = v[userId][limb];
+  float[] err_ = err[userId][limb];
+  float[] w_ = w[userId][limb];
+  float[] p_ = p[userId][limb];
+  float[] c_ = c[userId][limb];
   
   // draw the joint position
   confidence = context.getJointPositionSkeleton(userId,jointType1,jointPos1);
@@ -166,8 +155,11 @@ void drawLimb(int userId,int jointType1,int jointType2, int limb)
   strokeWeight(1);
 
   for (int i=0; i<pointNum; i++) {
-    stroke(c_[i],255,255);
+    stroke(180,255,255,c_[i]);
     point(pos_[i].x, pos_[i].y, pos_[i].z);
+    if (i%5 == 3){
+      line(pos_[i].x, pos_[i].y, pos_[i].z,pos_[i-1].x, pos_[i-1].y, pos_[i-1].z);
+    }
   }
 
   for (int i=0; i<pointNum; i++) {
@@ -180,7 +172,38 @@ void drawLimb(int userId,int jointType1,int jointType2, int limb)
     v_[i].x = w_[i] * v_[i].x + ((jointPos1.x + (jointPos2.x - jointPos1.x)/pointNum*i + err_[i]) - pos_[i].x)/p_[i];
     v_[i].y = w_[i] * v_[i].y + ((jointPos1.y + (jointPos2.y - jointPos1.y)/pointNum*i + err_[i]) - pos_[i].y)/p_[i];
     v_[i].z = w_[i] * v_[i].z + ((jointPos1.z + (jointPos2.z - jointPos1.z)/pointNum*i + err_[i]) - pos_[i].z)/p_[i];
-    c_[i] = map(v_[i].mag(), 0, 30, 180, 0);
+    c_[i] = map(v_[i].mag(), 0, 30, 0, 255);
+  }
+}
+
+void drawPoints(int userId,int jointPoint) {
+  PVector jointPos = new PVector();
+  float  confidence;
+  PVector[] pos_ = pos[userId][jointPoint];
+  PVector[] v_ = v[userId][jointPoint];
+  float[] err_ = err[userId][jointPoint];
+  float[] w_ = w[userId][jointPoint];
+  float[] p_ = p[userId][jointPoint];
+
+  confidence = context.getJointPositionSkeleton(userId,jointPoint,jointPos);
+
+  stroke(50,50,255,confidence * 200 + 55);
+  strokeWeight(10);
+
+  for (int i=0; i<pointNum; i++) {
+    point(pos_[i].x, pos_[i].y, pos_[i].z);
+  }
+
+  for (int i=0; i<pointNum; i++) {
+    pos_[i].x = pos_[i].x + v_[i].x;
+    pos_[i].y = pos_[i].y + v_[i].y;
+    pos_[i].z = pos_[i].z + v_[i].z;
+  }
+
+  for (int i=0; i<pointNum; i++) {
+    v_[i].x = w_[i] * v_[i].x + (jointPos.x - pos_[i].x)/p_[i];
+    v_[i].y = w_[i] * v_[i].y + (jointPos.y - pos_[i].y)/p_[i];
+    v_[i].z = w_[i] * v_[i].z + (jointPos.z - pos_[i].z)/p_[i];
   }
 }
 
