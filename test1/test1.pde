@@ -10,7 +10,7 @@
  */
  
 import SimpleOpenNI.*;
-
+import java.util.Arrays;
 
 SimpleOpenNI context;
 float        zoomF =0.5f;
@@ -37,7 +37,8 @@ PVector[][][] v = new PVector[6][jointNum][pointNum];
 float[][][] err = new float[6][jointNum][pointNum];
 float[][][] w = new float[6][jointNum][pointNum];
 float[][][] p = new float[6][jointNum][pointNum];
-int[] limbOrder = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14};
+float[][][] c = new float[6][jointNum][pointNum];
+int[][] limbOrder = new int[6][jointNum];
 
 
 void setup()
@@ -149,7 +150,9 @@ void draw()
   // draw the kinect cam
   // context.drawCamFrustum();
   if (frameCount % 300 == 0) {
-    shuffle(limbOrder);
+    for (int i=0; i<6; i++) {
+      shuffle(limbOrder[i]);
+    }
   }
 }
 
@@ -157,26 +160,26 @@ void draw()
 void drawSkeleton(int userId)
 {
   // to get the 3d joint data
-  drawLimb(userId, SimpleOpenNI.SKEL_HEAD, SimpleOpenNI.SKEL_NECK, limbOrder[0]);
+  drawLimb(userId, SimpleOpenNI.SKEL_HEAD, SimpleOpenNI.SKEL_NECK, limbOrder[userId][0]);
 
-  drawLimb(userId, SimpleOpenNI.SKEL_NECK, SimpleOpenNI.SKEL_LEFT_SHOULDER, limbOrder[1]);
-  drawLimb(userId, SimpleOpenNI.SKEL_LEFT_SHOULDER, SimpleOpenNI.SKEL_LEFT_ELBOW, limbOrder[2]);
-  drawLimb(userId, SimpleOpenNI.SKEL_LEFT_ELBOW, SimpleOpenNI.SKEL_LEFT_HAND, limbOrder[3]);
+  drawLimb(userId, SimpleOpenNI.SKEL_NECK, SimpleOpenNI.SKEL_LEFT_SHOULDER, limbOrder[userId][1]);
+  drawLimb(userId, SimpleOpenNI.SKEL_LEFT_SHOULDER, SimpleOpenNI.SKEL_LEFT_ELBOW, limbOrder[userId][2]);
+  drawLimb(userId, SimpleOpenNI.SKEL_LEFT_ELBOW, SimpleOpenNI.SKEL_LEFT_HAND, limbOrder[userId][3]);
 
-  drawLimb(userId, SimpleOpenNI.SKEL_NECK, SimpleOpenNI.SKEL_RIGHT_SHOULDER, limbOrder[4]);
-  drawLimb(userId, SimpleOpenNI.SKEL_RIGHT_SHOULDER, SimpleOpenNI.SKEL_RIGHT_ELBOW, limbOrder[5]);
-  drawLimb(userId, SimpleOpenNI.SKEL_RIGHT_ELBOW, SimpleOpenNI.SKEL_RIGHT_HAND, limbOrder[6]);
+  drawLimb(userId, SimpleOpenNI.SKEL_NECK, SimpleOpenNI.SKEL_RIGHT_SHOULDER, limbOrder[userId][4]);
+  drawLimb(userId, SimpleOpenNI.SKEL_RIGHT_SHOULDER, SimpleOpenNI.SKEL_RIGHT_ELBOW, limbOrder[userId][5]);
+  drawLimb(userId, SimpleOpenNI.SKEL_RIGHT_ELBOW, SimpleOpenNI.SKEL_RIGHT_HAND, limbOrder[userId][6]);
 
-  drawLimb(userId, SimpleOpenNI.SKEL_LEFT_SHOULDER, SimpleOpenNI.SKEL_TORSO, limbOrder[7]);
-  drawLimb(userId, SimpleOpenNI.SKEL_RIGHT_SHOULDER, SimpleOpenNI.SKEL_TORSO, limbOrder[8]);
+  drawLimb(userId, SimpleOpenNI.SKEL_LEFT_SHOULDER, SimpleOpenNI.SKEL_TORSO, limbOrder[userId][7]);
+  drawLimb(userId, SimpleOpenNI.SKEL_RIGHT_SHOULDER, SimpleOpenNI.SKEL_TORSO, limbOrder[userId][8]);
 
-  drawLimb(userId, SimpleOpenNI.SKEL_TORSO, SimpleOpenNI.SKEL_LEFT_HIP, limbOrder[9]);
-  drawLimb(userId, SimpleOpenNI.SKEL_LEFT_HIP, SimpleOpenNI.SKEL_LEFT_KNEE, limbOrder[10]);
-  drawLimb(userId, SimpleOpenNI.SKEL_LEFT_KNEE, SimpleOpenNI.SKEL_LEFT_FOOT, limbOrder[11]);
+  drawLimb(userId, SimpleOpenNI.SKEL_TORSO, SimpleOpenNI.SKEL_LEFT_HIP, limbOrder[userId][9]);
+  drawLimb(userId, SimpleOpenNI.SKEL_LEFT_HIP, SimpleOpenNI.SKEL_LEFT_KNEE, limbOrder[userId][10]);
+  drawLimb(userId, SimpleOpenNI.SKEL_LEFT_KNEE, SimpleOpenNI.SKEL_LEFT_FOOT, limbOrder[userId][11]);
 
-  drawLimb(userId, SimpleOpenNI.SKEL_TORSO, SimpleOpenNI.SKEL_RIGHT_HIP, limbOrder[12]);
-  drawLimb(userId, SimpleOpenNI.SKEL_RIGHT_HIP, SimpleOpenNI.SKEL_RIGHT_KNEE, limbOrder[13]);
-  drawLimb(userId, SimpleOpenNI.SKEL_RIGHT_KNEE, SimpleOpenNI.SKEL_RIGHT_FOOT, limbOrder[14]); 
+  drawLimb(userId, SimpleOpenNI.SKEL_TORSO, SimpleOpenNI.SKEL_RIGHT_HIP, limbOrder[userId][12]);
+  drawLimb(userId, SimpleOpenNI.SKEL_RIGHT_HIP, SimpleOpenNI.SKEL_RIGHT_KNEE, limbOrder[userId][13]);
+  drawLimb(userId, SimpleOpenNI.SKEL_RIGHT_KNEE, SimpleOpenNI.SKEL_RIGHT_FOOT, limbOrder[userId][14]); 
 
   // drawPoints(userId, SimpleOpenNI.SKEL_HEAD);
   // drawPoints(userId, SimpleOpenNI.SKEL_NECK);
@@ -224,15 +227,17 @@ void drawLimb(int userId,int jointType1,int jointType2, int limb)
   float[] err_ = err[userId][limb];
   float[] w_ = w[userId][limb];
   float[] p_ = p[userId][limb];
+  float[] c_ = c[userId][limb];
   
   // draw the joint position
   confidence = context.getJointPositionSkeleton(userId,jointType1,jointPos1);
   confidence = context.getJointPositionSkeleton(userId,jointType2,jointPos2);
 
-  stroke(20,20,255);
+  colorMode(HSB);
   strokeWeight(1);
 
   for (int i=0; i<pointNum; i++) {
+    stroke(c_[i],255,255);
     point(pos_[i].x, pos_[i].y, pos_[i].z);
   }
 
@@ -246,6 +251,7 @@ void drawLimb(int userId,int jointType1,int jointType2, int limb)
     v_[i].x = w_[i] * v_[i].x + ((jointPos1.x + (jointPos2.x - jointPos1.x)/pointNum*i + err_[i]) - pos_[i].x)/p_[i];
     v_[i].y = w_[i] * v_[i].y + ((jointPos1.y + (jointPos2.y - jointPos1.y)/pointNum*i + err_[i]) - pos_[i].y)/p_[i];
     v_[i].z = w_[i] * v_[i].z + ((jointPos1.z + (jointPos2.z - jointPos1.z)/pointNum*i + err_[i]) - pos_[i].z)/p_[i];
+    c_[i] = map(v_[i].mag(), 0, 30, 180, 0);
   }
 }
 
@@ -371,6 +377,7 @@ void getBodyDirection(int userId,PVector centerPoint,PVector dir)
 }
 
 void initMovePoints() {
+  int[] order = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14};
   for (int u=0; u<6; u++) {
     for (int i=0; i<jointNum; i++) {
       for (int j=0; j<pointNum; j++) {
@@ -385,8 +392,10 @@ void initMovePoints() {
         err[u][i][j] = random(-10, 10);
         w[u][i][j] = random(0.5, 0.98);
         p[u][i][j] = random(20, 100);
+        c[u][i][j] = 180;
       }
     }
+    limbOrder[u] = Arrays.copyOf(order, order.length);
   }
 }
 
