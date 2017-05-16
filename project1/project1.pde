@@ -48,6 +48,7 @@ ArrayList[][] trackParticles = new ArrayList[6][jointNum];
 int[][] userColor = new int[6][jointNum];
 boolean[] isEmit = new boolean[6];
 int[] emissions = new int[6];
+PVector[][] savePos = new PVector[6][jointNum];
 
 int[] userLimbOrder = {
   1, 2, 3, 4, 5, 6
@@ -512,28 +513,30 @@ void v3DrawSkeleton(int userId) {
       endShape();
       if (tracker[i].size()>200 && isSaved) {
         isEmit[userId-1] = true;
-      }
+        savePos[userId-1][6] = new PVector(tracker[6].get(0).x, tracker[6].get(0).y, tracker[6].get(0).z);
+        savePos[userId-1][7] = new PVector(tracker[7].get(0).x, tracker[7].get(0).y, tracker[7].get(0).z);      }
       if (isEmit[userId-1]) {
         int emission = emissions[userId-1];
-        beginShape(LINES);
-        for (int j=tracker[i].size ()-1; j>3; j--) {
+        strokeWeight(2);
+        beginShape(POINT);
+        for (int j=tracker[i].size()-1; j>3; j--) {
           stroke(userColor[userId-1][i], 0, 255, j);
-          fill(userColor[userId-1][i], 255, 255, 1.0*j/pointNum*(30+emission));
+          fill(userColor[userId-1][i], 255, 0, 1.0*j/pointNum*(30+emission));
           vertex(
-          tracker[i].get(j).x + random(-1*emission, emission) + random(-1*emission, emission), 
-          tracker[i].get(j).y + random(-1*emission, emission) + random(-1*emission, emission), 
-          tracker[i].get(j).z + random(-1*emission, emission) + random(-1*emission, emission)
+          tracker[i].get(j).x + random(-1*emission/2, emission/2) + random(-1*emission/2, emission/2), 
+          tracker[i].get(j).y + random(-1*emission/2, emission/2) + random(-1*emission/2, emission/2), 
+          tracker[i].get(j).z + random(-1*emission/2, emission/2) + random(-1*emission/2, emission/2)
             );
           vertex(
-          tracker[i].get(j-3).x + random(-1*emission, emission) + random(-1*emission, emission), 
-          tracker[i].get(j-3).y + random(-1*emission, emission) + random(-1*emission, emission), 
-          tracker[i].get(j-3).z + random(-1*emission, emission) + random(-1*emission, emission)
+          tracker[i].get(j-3).x + random(-1*emission/2, emission/2) + random(-1*emission/2, emission/2), 
+          tracker[i].get(j-3).y + random(-1*emission/2, emission/2) + random(-1*emission/2, emission/2), 
+          tracker[i].get(j-3).z + random(-1*emission/2, emission/2) + random(-1*emission/2, emission/2)
             );
         }
         endShape();
         emissions[userId-1] += 1;
       }
-      if (emissions[userId-1] > 100) {
+      if (emissions[userId-1] > 150) {
         isEmit[userId-1] = false;
         emissions[userId-1] = 1;
         userColor[userId-1][6] = int(random(255));
@@ -554,21 +557,54 @@ void v3Track(int userId, int jointType) {
   // draw the joint position
   confidence = context.getJointPositionSkeleton(userId, jointType, jointPos);
 
-  if (tracker.size() > pointNum) {
-    tracker.remove(0);
-    tracker.remove(1);
-    tracker.remove(2);
-  }
+  if (isEmit[userId-1] && PVector.dist(jointPos, savePos[userId-1][jointType]) > 400) {
+    if (tracker.size() > pointNum) {
+      tracker.remove(0);
+      tracker.remove(1);
+      tracker.remove(2);
+    }
+    trackPos1 = PVector.sub(jointPos, savePos[userId-1][jointType]);
+    trackPos2 = PVector.sub(jointPos, savePos[userId-1][jointType]);
+    trackPos3 = PVector.sub(jointPos, savePos[userId-1][jointType]);
+    trackPos1.mult(random(1000));
+    trackPos2.mult(random(1000));
+    trackPos3.mult(random(1000));
+    trackPos1.add(savePos[userId-1][jointType]);
+    trackPos2.add(savePos[userId-1][jointType]);
+    trackPos3.add(savePos[userId-1][jointType]);
+    tracker.add(trackPos1);
+    tracker.add(trackPos2);
+    tracker.add(trackPos3);
 
-  trackPos1 = new PVector(-1*random(-20, 20), random(-20, 20), random(-20, 20));
-  trackPos2 = new PVector(random(-20, 20), -1*random(-20, 20), random(-20, 20));
-  trackPos3 = new PVector(random(-20, 20), random(-20, 20), -1*random(-20, 20));
-  trackPos1.add(jointPos);
-  trackPos2.add(jointPos);
-  trackPos3.add(jointPos);
-  tracker.add(trackPos1);
-  tracker.add(trackPos2);
-  tracker.add(trackPos3);
+  } else {
+    if (tracker.size() > pointNum) {
+      tracker.remove(0);
+      tracker.remove(1);
+      tracker.remove(2);
+    }
+    float x, y, z, r;
+    x = random(-1, 1);
+    y = random(-1, 1);
+    z = sqrt(1 - x * x - y * y);
+    r = random(40);
+    trackPos1 = new PVector(random(-20,20), random(-20,20), random(-20,20));
+    x = random(-1, 1);
+    y = random(-1, 1);
+    z = sqrt(1 - x * x - y * y);
+    r = random(40);
+    trackPos2 = new PVector(random(-20,20), random(-20,20), random(-20,20));
+    x = random(-1, 1);
+    y = random(-1, 1);
+    z = sqrt(1 - x * x - y * y);
+    r = random(40);
+    trackPos3 = new PVector(random(-20,20), random(-20,20), random(-20,20));
+    trackPos1.add(jointPos);
+    trackPos2.add(jointPos);
+    trackPos3.add(jointPos);
+    tracker.add(trackPos1);
+    tracker.add(trackPos2);
+    tracker.add(trackPos3);
+  }
 }
 
 void v3InitMovePoints() {
@@ -579,6 +615,7 @@ void v3InitMovePoints() {
         userColor[u][i] = int(random(255));
         isEmit[u] = false;
         emissions[u] = 1;
+        savePos[u][i] = new PVector();
       }
     }
   }
@@ -628,16 +665,19 @@ void keyPressed()
     version = 1;
     pointNum = 800;
     v1InitMovePoints();
+    rotY = 0;
     break;
   case 'l':
     version = 2;
     pointNum = 800;
     v2InitMovePoints();
+    rotY = 0;
     break;
   case 'h':
     version = 3;
     pointNum = 400;
     v3InitMovePoints();
+    rotY = 0;
     break;
   }
 
