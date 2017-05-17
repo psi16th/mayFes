@@ -419,7 +419,7 @@ void version3()
   int     index;
   PVector realWorldPoint;
 
-  translate(0, 0, -1000);  // set the rotation center of the scene 1000 infront of the camera
+  translate(0, 0, -2000);  // set the rotation center of the scene 1000 infront of the camera
 
   beginShape(POINTS);
   for (int y=0; y < context.depthHeight (); y+=steps)
@@ -482,7 +482,7 @@ void v3TrackSkeleton(int userId)
 }
 
 void v3DrawSkeleton(int userId) {
-  ArrayList<PVector>[] tracker = trackParticles[userId];
+  ArrayList<PVector>[] tracker = trackParticles[userId-1];
   PVector left = new PVector();
   PVector right = new PVector();
   float  confidence;
@@ -504,7 +504,7 @@ void v3DrawSkeleton(int userId) {
             isSaved = false;
           }
         }
-        int save = isSaved ? 0 : 124;
+        int save = isSaved ? 120 : 200;
         stroke(userColor[userId-1][i], save, 255, j);
 //        fill(userColor[userId-1][i], save, 255, 1.0*j/pointNum*30);
         vertex(tracker[i].get(j).x, tracker[i].get(j).y, tracker[i].get(j).z);
@@ -514,29 +514,30 @@ void v3DrawSkeleton(int userId) {
       if (tracker[i].size()>200 && isSaved) {
         isEmit[userId-1] = true;
         savePos[userId-1][6] = new PVector(tracker[6].get(0).x, tracker[6].get(0).y, tracker[6].get(0).z);
-        savePos[userId-1][7] = new PVector(tracker[7].get(0).x, tracker[7].get(0).y, tracker[7].get(0).z);      }
+        savePos[userId-1][7] = new PVector(tracker[7].get(0).x, tracker[7].get(0).y, tracker[7].get(0).z);
+      }
       if (isEmit[userId-1]) {
         int emission = emissions[userId-1];
+        PVector posl = tracker[6].get(tracker[6].size()-1);
+        PVector posr = tracker[7].get(tracker[7].size()-1);
         strokeWeight(2);
-        beginShape(POINT);
-        for (int j=tracker[i].size()-1; j>3; j--) {
-          stroke(userColor[userId-1][i], 0, 255, j);
-          fill(userColor[userId-1][i], 255, 0, 1.0*j/pointNum*(30+emission));
-          vertex(
-          tracker[i].get(j).x + random(-1*emission/2, emission/2) + random(-1*emission/2, emission/2), 
-          tracker[i].get(j).y + random(-1*emission/2, emission/2) + random(-1*emission/2, emission/2), 
-          tracker[i].get(j).z + random(-1*emission/2, emission/2) + random(-1*emission/2, emission/2)
-            );
-          vertex(
-          tracker[i].get(j-3).x + random(-1*emission/2, emission/2) + random(-1*emission/2, emission/2), 
-          tracker[i].get(j-3).y + random(-1*emission/2, emission/2) + random(-1*emission/2, emission/2), 
-          tracker[i].get(j-3).z + random(-1*emission/2, emission/2) + random(-1*emission/2, emission/2)
-            );
+        beginShape(POINTS);
+        for (int j=0; j<500; j++) {
+          float x,y,z,r;
+          x = random(-1,1);
+          y = random(-1,1);
+          z = random(1) < 0.5 ? sqrt(1 - x*x - y*y) : sqrt(1 - x*x - y*y)*(-1);
+          r = random(-1,1)*random(-1,1)*(random(30, 80)+random(30, 80)+random(30, 80)+random(30, 80)+random(30, 80));
+          stroke(userColor[userId-1][6], 120, 255, 120);
+          vertex(posl.x + r*x, posl.y + r*y, posl.z + r*z);
+          stroke(userColor[userId-1][7], 120, 255, 120);
+          vertex(posr.x + r*x, posr.y + r*y, posr.z + r*z);
         }
         endShape();
+        strokeWeight(1);
         emissions[userId-1] += 1;
       }
-      if (emissions[userId-1] > 150) {
+      if (emissions[userId-1] > 100) {
         isEmit[userId-1] = false;
         emissions[userId-1] = 1;
         userColor[userId-1][6] = int(random(255));
@@ -552,12 +553,12 @@ void v3Track(int userId, int jointType) {
   PVector trackPos2 = new PVector();
   PVector trackPos3 = new PVector();
   float  confidence;
-  ArrayList<PVector> tracker = trackParticles[userId][jointType];
+  ArrayList<PVector> tracker = trackParticles[userId-1][jointType];
 
   // draw the joint position
   confidence = context.getJointPositionSkeleton(userId, jointType, jointPos);
 
-  if (isEmit[userId-1] && PVector.dist(jointPos, savePos[userId-1][jointType]) > 400) {
+  if (isEmit[userId-1] && PVector.dist(jointPos, savePos[userId-1][jointType]) > 500) {
     if (tracker.size() > pointNum) {
       tracker.remove(0);
       tracker.remove(1);
@@ -566,9 +567,9 @@ void v3Track(int userId, int jointType) {
     trackPos1 = PVector.sub(jointPos, savePos[userId-1][jointType]);
     trackPos2 = PVector.sub(jointPos, savePos[userId-1][jointType]);
     trackPos3 = PVector.sub(jointPos, savePos[userId-1][jointType]);
-    trackPos1.mult(random(1000));
-    trackPos2.mult(random(1000));
-    trackPos3.mult(random(1000));
+    trackPos1.mult(random(10000));
+    trackPos2.mult(random(0));
+    trackPos3.mult(random(0));
     trackPos1.add(savePos[userId-1][jointType]);
     trackPos2.add(savePos[userId-1][jointType]);
     trackPos3.add(savePos[userId-1][jointType]);
@@ -677,7 +678,8 @@ void keyPressed()
     version = 3;
     pointNum = 400;
     v3InitMovePoints();
-    rotY = 0;
+    rotY = -90;
+    zoomF =0.3f;
     break;
   }
 
